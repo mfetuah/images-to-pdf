@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e5322d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Images to PDF">
+<title>Images to PDF</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1.5V9h5.5L13 3.5zM8 13h8v1.5H8V13zm0 3h8v1.5H8V16z"/></svg>
+    <span>Images&nbsp;to&nbsp;PDF</span>
+  </div>
+  <div class="top-actions">
+    <span id="count" class="count">0 images</span>
+    <button id="addMoreBtn" class="btn ghost" hidden>+ Add more</button>
+    <button id="clearBtn" class="btn ghost danger" hidden>Clear all</button>
+  </div>
+</header>
+
+<main>
+  <!-- Drop zone (shown when empty) -->
+  <section id="dropzone" class="dropzone" tabindex="0">
+    <svg viewBox="0 0 24 24" width="56" height="56" aria-hidden="true"><path fill="currentColor" d="M19 7v2.99s-1.99.01-2 0V7h-3s.01-1.99 0-2h3V2h2v3h3v2h-3zm-3 4V8h-3V5H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8h-3zM5 19l3-4 2 3 3-4 4 5H5z"/></svg>
+    <h1 class="desktop-only">Drop your pictures here</h1>
+    <h1 class="touch-only">Add your pictures</h1>
+    <p class="desktop-only">or <button id="browseBtn" class="link">browse your files</button> — select as many as you like</p>
+    <div class="touch-only pick-buttons">
+      <button id="galleryBtn" class="btn primary big">Choose from gallery</button>
+      <button id="filesBtn" class="btn big">Choose from files <small>(over 100 at once)</small></button>
+      <button id="cameraBtn" class="btn big">Take a photo</button>
+      <p class="hint">The gallery lets you pick up to 100 pictures at a time. Use <b>+ Add more</b> for the rest, or use <b>Choose from files</b>, open your Camera/DCIM folder and tap <b>Select all</b>.</p>
+    </div>
+    <p class="hint">JPG, PNG, WEBP, GIF, BMP · Everything is processed on your device; nothing is uploaded.</p>
+  </section>
+
+  <!-- Workspace (shown when there are images) -->
+  <section id="workspace" class="workspace" hidden>
+    <div id="summary" class="summary" hidden></div>
+    <p class="tip desktop-only">Drag cards to reorder · Click a picture to view it larger and scroll through · Use ⟲ ⟳ to rotate</p>
+    <p class="tip touch-only">Tap a picture to view it and swipe through · ⟲ ⟳ rotate · ← → change the order</p>
+    <div id="grid" class="grid"></div>
+  </section>
+</main>
+
+<!-- Bottom bar with PDF settings -->
+<footer id="bottombar" class="bottombar" hidden>
+  <button id="settingsToggle" class="settings-toggle" aria-expanded="false">⚙ PDF settings</button>
+  <div id="settings" class="settings">
+    <label>Page size
+      <select id="pageSize">
+        <option value="fit">Fit to picture</option>
+        <option value="a4" selected>A4</option>
+        <option value="letter">Letter</option>
+      </select>
+    </label>
+    <label>Margin
+      <select id="margin">
+        <option value="0">None</option>
+        <option value="20" selected>Small</option>
+        <option value="40">Large</option>
+      </select>
+    </label>
+    <label>Quality
+      <select id="quality">
+        <option value="low">Small file</option>
+        <option value="medium" selected>Balanced</option>
+        <option value="high">High quality</option>
+      </select>
+    </label>
+    <label class="grow">File name
+      <input id="fileName" type="text" value="my-document" spellcheck="false">
+    </label>
+  </div>
+  <button id="convertBtn" class="btn primary big">Convert to PDF</button>
+</footer>
+
+<!-- Viewer modal -->
+<div id="viewer" class="viewer" hidden role="dialog" aria-modal="true" aria-label="Picture viewer">
+  <div class="viewer-top">
+    <span id="viewerCounter"></span>
+    <span id="viewerName" class="viewer-name"></span>
+    <button id="viewerClose" class="icon-btn" title="Close (Esc)">✕</button>
+  </div>
+  <div class="viewer-stage">
+    <button id="viewerPrev" class="nav prev" title="Previous (←)">‹</button>
+    <div class="viewer-img-wrap"><img id="viewerImg" alt=""></div>
+    <button id="viewerNext" class="nav next" title="Next (→)">›</button>
+  </div>
+  <div class="viewer-tools">
+    <button id="viewerRotL" class="btn ghost light">⟲ Rotate left</button>
+    <button id="viewerRotR" class="btn ghost light">⟳ Rotate right</button>
+    <button id="viewerDelete" class="btn ghost light danger">Remove</button>
+  </div>
+  <div id="filmstrip" class="filmstrip"></div>
+</div>
+
+<!-- Progress overlay -->
+<div id="progress" class="progress" hidden>
+  <div class="progress-card">
+    <h2>Creating your PDF…</h2>
+    <div class="bar"><div id="progressFill" class="fill"></div></div>
+    <p id="progressText">0%</p>
+  </div>
+</div>
+
+<!-- PDF ready -->
+<div id="done" class="progress" hidden role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+  <div class="progress-card">
+    <div class="done-icon">✓</div>
+    <h2 id="doneTitle">Your PDF is ready</h2>
+    <p id="doneInfo" class="done-info"></p>
+    <div class="done-actions">
+      <button id="downloadBtn" class="btn primary big">⬇ Download PDF</button>
+      <button id="shareBtn" class="btn big" hidden>Share / Save to…</button>
+      <button id="doneBack" class="btn ghost">Back to pictures</button>
+      <button id="doneNew" class="btn ghost danger">Start a new PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- "Add more" choices on phones -->
+<div id="addSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="menu">
+    <button data-pick="gallery" role="menuitem">🖼 Gallery <small>(up to 100 at a time)</small></button>
+    <button data-pick="files" role="menuitem">📁 Files <small>(no limit)</small></button>
+    <button data-pick="camera" role="menuitem">📷 Take a photo</button>
+    <button data-pick="cancel" class="cancel" role="menuitem">Cancel</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden role="status"></div>
+
+<input id="fileInput" type="file" accept="image/*" multiple hidden>
+<!-- No "accept" filter: Android then opens the Files app, which has no 100-picture limit -->
+<input id="filesInput" type="file" multiple hidden>
+<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+<script src="app.js"></script>
+</body>
+</html>
